@@ -71,7 +71,7 @@ class PumpCurve_GUI_Class(Ui_Form, qtw.QWidget):  #class for PumpCurve_GUI inher
         return True
         :return: boolean for if the operation was successful.
         '''
-        fname=#JES Missing Code # use qtw.QFileDialog.getOpenFileName
+        fname = qtw.QFileDialog.getOpenFileName(self, "Open Pump Data File", self.FilePath, "Text Files (*.txt)")  #  Done
         oTF=len(fname[0])>0
         if oTF:
             self.FileName=fname[0]

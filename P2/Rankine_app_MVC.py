@@ -95,7 +95,8 @@ class MainWindow(qtw.QWidget, Ui_Form):
         self.RC.updatePlot()
 
     def SetUnits(self):
-        #JES Missing Code
+        #JES Missing Code                      #  done
+        self.RC.updateUnits()
         pass
 
     def setNewPHigh(self):

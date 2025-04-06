@@ -44,11 +44,11 @@ class Pump_Controller():
         :param data: 
         :return: 
         """
-        self.Model.PumpName = #JES Missing Code
+        self.Model.PumpName = data[0].strip() #JES Missing Code  #  done
         #data[1] is the units line
-        L=data[2].split()
-        self.Model.FlowUnits = #JES Missing Code
-        self.Model.HeadUnits = #JES Missing Code
+        L = data[2].split()
+        self.Model.FlowUnits = L[0]  #JES Missing Code  #  Done
+        self.Model.HeadUnits = L[1]  #JES Missing Code  #  Done
 
         # extracts flow, head and efficiency data and calculates coefficients
         self.SetData(data[3:])
@@ -68,10 +68,10 @@ class Pump_Controller():
 
         #parse new data
         for L in data:
-            Cells=#JES Missing Code #parse the line into an array of strings
-            self.Model.FlowData=np.append(self.Model.FlowData, #JES Missing Code) #remove any spaces and convert string to a float
-            self.Model.HeadData=np.append(self.Model.HeadData, #JES Missing Code) #remove any spaces and convert string to a float
-            self.Model.EffData=np.append(self.Model.EffData, #JES Missing Code) #remove any spaces and convert string to a float
+            Cells= L.split()  #JES Missing Code #parse the line into an array of strings  #  Done
+            self.Model.FlowData=np.append(self.Model.FlowData, float(Cells[0])) #remove any spaces and convert string to a float  #  Done
+            self.Model.HeadData=np.append(self.Model.HeadData, float(Cells[1])) #remove any spaces and convert string to a float  #  Done
+            self.Model.EffData=np.append(self.Model.EffData, float(Cells[2])) #remove any spaces and convert string to a float  #  Done
 
         #call least square fit for head and efficiency
         self.LSFit()
@@ -131,6 +131,36 @@ class Pump_View():
 
         axes = self.ax
         #JES Missing code (many lines to make the graph)
+        axes.clear()
+
+        axes.set_xlabel("Flow Rate (gpm)")
+        axes.set_xlim(13, 43)
+        axes.set_xticks([15, 20, 25, 30, 35, 40])
+        axes.tick_params(axis='x', direction='in')
+
+        axes.set_ylabel("Head (ft)")
+        axes.set_ylim(5, 75)
+        axes.set_yticks([10, 20, 30, 40, 50, 60, 70])
+        axes.tick_params(axis='y', direction='in')
+
+        head_data, = axes.plot(Model.FlowData, Model.HeadData, 'ko', markersize=8, markerfacecolor='none', label='Head')
+        head_fit, = axes.plot(headx, heady, 'k--', linewidth=2, label='Head (R\u00b2={:.3f})'.format(headRSq)) # might need to put in 1.000
+
+        ax2 = axes.twinx()
+        ax2.set_ylabel("Efficiency (%)", color='k')
+        ax2.set_ylim(5, 60)
+        ax2.set_yticks([10, 20, 30, 40, 50])
+        ax2.tick_params(axis='y', direction='in')
+
+        eff_data, = ax2.plot(Model.FlowData, Model.EffData, 'k^', markersize=8, markerfacecolor='none', label='Efficiency')
+        eff_fit, = ax2.plot(effx, effy, 'k:', linewidth=2, label='Efficiency (R\u00b2={:.3f})'.format(effRSq)) # might need to put in 0.989
+
+        #axes.set_title("Pump Curve Analysis")  # Remove "#" if necessary
+
+        leg1 = axes.legend(handles=[head_data, head_fit], loc='center left', bbox_to_anchor=(0.0, 0.5))
+        leg2 = axes.legend(handles=[eff_data, eff_fit], loc = 'upper right')
+
+        axes.add_artist(leg1)
 
         self.canvas.draw()
 

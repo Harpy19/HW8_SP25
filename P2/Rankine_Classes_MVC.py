@@ -70,16 +70,32 @@ class rankineView():
             self.le_TurbineInletCondition.setText("1.0")
             self.le_TurbineInletCondition.setEnabled(False)
         else:
-            pass
-            #JES Missing Code
+            #JES Missing Code                                   # done
             #step 1: get saturated properties at PHigh
             #step 2: convert the saturation temperature to proper units
             #step 3:  update the text in the le_TurbineInletCondition widget
+
+            #implementing T high selection
+            self.le_TurbineInletCondition.setText("1.0")
+
+            #converts input P high to SI if needed
+            PCF = 1 if SI else UC.psi_to_bar
+            pHigh = float(self.le_PHigh.text()) * PCF
+
+            #obtains saturated properties at P high
+            satPropsHigh = Model.steam.getsatProps_p(pHigh)
+
+            #converts saturated temperature to proper units
+            Tsat = satPropsHigh.tsat if SI else UC.C_to_F(satPropsHigh.tsat)
+
+            #updates the turbine inlet line edit with the saturation temperature
+            self.le_TurbineInletCondition.setText("{:.2f}".format(Tsat))
 
         # endregion
         x = self.rdo_Quality.isChecked()
         self.lbl_TurbineInletCondition.setText(
             ("Turbine Inlet: {}{} =".format('x' if x else 'THigh', '' if x else ('(C)' if SI else '(F)'))))
+        pass
 
     def setNewPHigh(self, Model=None):
         """
@@ -89,11 +105,30 @@ class rankineView():
                  finally, we need to call the function self.SelectQualityOrTHigh()
                  :return:
                  """
-        #JES Missing Code
+        #JES Missing Code           # done
+        SI = self.rb_SI.isChecked()     #Checks which units are used
+        PCF = 1 if SI else UC.psi_to_bar  # Changes units
+        pHigh = float(self.le_PHigh.text()) * PCF # Changes values
+        satPropsHigh = Model.steam.getsatProps_p(pHigh)
+        self.lbl_SatPropHigh.setText(satPropsHigh.getTextOutput(SI=SI))
+
+        self.selectQualityOrTHigh(Model)
         pass
 
     def setNewPLow(self, Model=None):
-        #JES Missing Code
+        """
+        For this section, I put code for the program to determine the units/conversion for the Low Pressure.
+        -Checks which set of units are chosen
+        -Default units are SI
+        -If IP units are chosen it will change the units/value from SI to IP
+        """
+        #JES Missing Code                                   # done
+        SI = self.rb_SI.isChecked()
+        PCF = 1 if SI else UC.psi_to_bar
+        pLow = float(self.le_PLow.text()) * PCF
+        satPropsLow = Model.steam.getsatProps_p(pLow)
+        self.lbl_SatPropHigh.setText(satPropsLow.getTextOutput(SI=SI))
+
         pass
 
     def outputToGUI(self, Model=None):
@@ -102,6 +137,16 @@ class rankineView():
             return
         #update the line edits and labels
         HCF=1 if Model.SI else UC.kJperkg_to_BTUperlb # Enthalpy conversion factor (HCF)
+
+        """
+        I was having an issue with the output box where it would cut off the last digit after the decimal point.
+        I set the minimum width for the first variables in each column and this corrected the issue I was having 
+        for all of the variables and gave enough spacing for the entire value to show.
+        Note: This was only occurring in the output box.
+        """
+        self.lbl_H1.setMinimumWidth(110)
+        self.lbl_TurbineWork.setMinimumWidth(110)
+
         self.lbl_H1.setText("{:0.2f}".format(Model.state1.h * HCF))
         self.lbl_H2.setText("{:0.2f}".format(Model.state2.h * HCF))
         self.lbl_H3.setText("{:0.2f}".format(Model.state3.h * HCF))
@@ -130,15 +175,45 @@ class rankineView():
 
         #Step 1. Update pressures for PHigh and PLow
         pCF=1 if Model.SI else UC.bar_to_psi
-        #JES Missing Code
+        #JES Missing Code                               # done
+        self.le_PHigh.setText("{:.2f}".format(Model.p_high * pCF))
+        self.le_PLow.setText("{:.2f}".format(Model.p_low * pCF))
 
         #Step 2. Update THigh if it is not None
         if not self.rdo_Quality.isChecked():
-            #JES Missing Code
+            #JES Missing Code                                 #  done
+            satPropsHigh = Model.steam.getsatProps_p(Model.p_high)
+            Tsat = satPropsHigh.tsat if Model.SI else UC.C_to_F(satPropsHigh.tsat)
+            self.le_TurbineInletCondition.setText("{:0.2f}".format(Tsat))
             pass
 
         #Step 3. Update the units for labels
         #JES Missing Code
+        self.lbl_PHigh.setText("P High ({})".format("bar" if Model.SI else "psi"))
+        self.lbl_PLow.setText("P Low ({})".format("bar" if Model.SI else "psi"))
+        if not self.rdo_Quality.isChecked():
+            self.lbl_TurbineInletCondition.setText("Turbine Inlet: T High ({}) =".format("C" if Model.SI else "F"))
+        else:
+            self.lbl_TurbineInletCondition.setText("Turbine Inlet: x =")
+        # This section changes the units in the Output box depending on what the user chooses.
+        if Model.SI:
+            self.lbl_H1Units.setText("kJ/kg")
+            self.lbl_H2Units.setText("kJ/kg")
+            self.lbl_H3Units.setText("kJ/kg")
+            self.lbl_H4Units.setText("kJ/kg")
+            self.lbl_TurbineWorkUnits.setText("kJ/kg")
+            self.lbl_PumpWorkUnits.setText("kJ/kg")
+            self.lbl_HeatAddedUnits.setText("kJ/kg")
+        else:
+            self.lbl_H1Units.setText("BTU/lb")
+            self.lbl_H2Units.setText("BTU/lb")
+            self.lbl_H3Units.setText("BTU/lb")
+            self.lbl_H4Units.setText("BTU/lb")
+            self.lbl_TurbineWorkUnits.setText("BTU/lb")
+            self.lbl_PumpWorkUnits.setText("BTU/lb")
+            self.lbl_HeatAddedUnits.setText("BTU/lb")
+
+        self.plot_cycle_XY(Model=Model)
         pass
 
     def print_summary(self, Model=None):
